@@ -56,7 +56,7 @@ def run_transcription(job_id: str):
             "--model", "/root/code/whisper.cpp/models/ggml-base.en.bin",
             "-otxt"
         ]
-        subprocess.run(cmd, check=True)
+        subprocess.run(cmd, check=True, cwd=input_path.parent)
 
         job["output_path"] = output_path
         job["status"] = "done"
@@ -79,7 +79,9 @@ def download(job_id: str):
     job = job_map.get(job_id)
     if not job:
         return {"error": "Job ID not found"}
+
     output_path = job["output_path"]
     if not output_path.exists():
         return {"error": "Transcript not found"}
+
     return FileResponse(output_path, filename=output_path.name)
