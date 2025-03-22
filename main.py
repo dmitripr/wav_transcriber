@@ -28,9 +28,18 @@ async def index(request: Request):
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...), background_tasks: BackgroundTasks = BackgroundTasks()):
     job_id = str(uuid.uuid4())
-    upload_path = UPLOAD_DIR / f"{job_id}.wav"
+    original_filename = Path(file.filename).name
+    upload_path = UPLOAD_DIR / original_filename
+
     output_path = TRANSCRIBE_DIR / f"{job_id}.txt"
     progress[job_id] = "starting"
+
+    job_map = {}
+    job_map[job_id] = {
+    "input_path": upload_path,
+    "output_path": upload_path.with_suffix(".txt"),
+    "filename": original_filename
+}
 
     with open(upload_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
@@ -44,7 +53,7 @@ def run_transcription(job_id: str, input_path: Path, output_path: Path):
         cmd = [
             "/root/code/whisper.cpp/bin/whisper-cli",
             str(input_path),
-            "--output", str(output_path),
+            "-otxt",
             "--model", "/root/code/whisper.cpp/models/ggml-base.en.bin"
         ]
         subprocess.run(cmd, check=True)
@@ -58,7 +67,14 @@ async def get_progress(job_id: str):
 
 @app.get("/download/{job_id}")
 async def download_transcript(job_id: str):
-    output_path = TRANSCRIBE_DIR / f"{job_id}.txt"
+    job = job_map.get(job_id)
+    if not job:
+        return {"error": "Job ID not found"}
+    output_path = job["output_path"]
+    filename = job["filename"].replace(".wav", ".txt")
+    return FileResponse(output_path, filename=filename)
+
+
     if output_path.exists():
         return FileResponse(output_path, filename=f"transcription_{job_id}.txt")
     return {"error": "File not found"}
