@@ -46,7 +46,7 @@ async def upload_file(file: UploadFile = File(...), background_tasks: Background
 def run_transcription(job_id: str):
     job = job_map[job_id]
     input_path = job["input_path"]
-    output_path = input_path.with_suffix(".txt")
+    output_path = input_path.with_name(input_path.name + ".txt")  # e.g., Recording.wav.txt
 
     job["status"] = "running"
     try:
