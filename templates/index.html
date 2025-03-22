@@ -6,10 +6,10 @@
 </head>
 <body>
   <h1>Upload a WAV File</h1>
-  <form id="uploadForm" method="POST" enctype="multipart/form-data">
+  <form id="uploadForm" action="/upload" method="POST" enctype="multipart/form-data">
     <input type="file" id="fileInput" name="file" accept=".wav" required>
     <button type="submit">Upload</button>
-  </form>
+  </form>  
   <div id="status"></div>
 </body>
 </html>
