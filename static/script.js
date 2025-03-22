@@ -9,13 +9,16 @@ document.getElementById("uploadForm").addEventListener("submit", async function 
     body: formData
   });
 
-  const data = await res.json();
-  const jobId = data.job_id;
-  document.getElementById("status").innerText = "Transcription started...";
-
-  pollJobs();
+  if (res.ok) {
+    // Redirect back to home to show job list
+    window.location.href = "/";
+  } else {
+    const error = await res.text();
+    alert("Upload failed: " + error);
+  }
 });
 
+// Run on page load to show jobs
 async function pollJobs() {
   const res = await fetch("/jobs");
   const jobs = await res.json();
@@ -35,3 +38,4 @@ async function pollJobs() {
 }
 
 setInterval(pollJobs, 3000);
+window.addEventListener("load", pollJobs);
