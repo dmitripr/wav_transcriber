@@ -42,10 +42,10 @@ def run_transcription(job_id: str, input_path: Path, output_path: Path):
     progress[job_id] = "running"
     try:
         cmd = [
-            "whisper-cli",
+            "/root/code/whisper.cpp/bin/whisper-cli",
             str(input_path),
             "--output", str(output_path),
-            "--model", "base.en"
+            "--model", "/root/code/whisper.cpp/models/ggml-base.en.bin"
         ]
         subprocess.run(cmd, check=True)
         progress[job_id] = "done"
