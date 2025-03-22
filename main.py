@@ -52,7 +52,7 @@ def run_transcription(job_id: str):
     try:
         cmd = [
             "/root/code/whisper.cpp/bin/whisper-cli",
-            str(input_path),
+            input_path.name,
             "--model", "/root/code/whisper.cpp/models/ggml-base.en.bin",
             "-otxt"
         ]
