@@ -1,5 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, BackgroundTasks
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
@@ -41,12 +41,12 @@ async def upload_file(file: UploadFile = File(...), background_tasks: Background
 
     background_tasks.add_task(run_transcription, job_id)
 
-    return {"job_id": job_id}
+    return RedirectResponse(url="/", status_code=303)
 
 def run_transcription(job_id: str):
     job = job_map[job_id]
     input_path = job["input_path"]
-    output_path = job["output_path"]
+    output_path = input_path.with_suffix(".txt")
 
     job["status"] = "running"
     try:
@@ -57,16 +57,11 @@ def run_transcription(job_id: str):
             "-otxt"
         ]
         subprocess.run(cmd, check=True)
+
+        job["output_path"] = output_path
         job["status"] = "done"
     except subprocess.CalledProcessError:
         job["status"] = "error"
-
-@app.get("/progress/{job_id}")
-async def get_progress(job_id: str):
-    job = job_map.get(job_id)
-    if not job:
-        return {"status": "unknown"}
-    return {"status": job["status"]}
 
 @app.get("/jobs")
 def list_jobs():

@@ -1,24 +1,3 @@
-document.getElementById("uploadForm").addEventListener("submit", async function (e) {
-  e.preventDefault();
-  const fileInput = document.getElementById("fileInput");
-  const formData = new FormData();
-  formData.append("file", fileInput.files[0]);
-
-  const res = await fetch("/upload", {
-    method: "POST",
-    body: formData
-  });
-
-  if (res.ok) {
-    // Redirect back to home to show job list
-    window.location.href = "/";
-  } else {
-    const error = await res.text();
-    alert("Upload failed: " + error);
-  }
-});
-
-// Run on page load to show jobs
 async function pollJobs() {
   const res = await fetch("/jobs");
   const jobs = await res.json();
