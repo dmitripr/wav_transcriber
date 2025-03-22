@@ -13,21 +13,25 @@ document.getElementById("uploadForm").addEventListener("submit", async function 
   const jobId = data.job_id;
   document.getElementById("status").innerText = "Transcription started...";
 
-  const interval = setInterval(async () => {
-    const statusRes = await fetch(`/progress/${jobId}`);
-    const statusData = await statusRes.json();
-    const status = statusData.status;
-
-    if (status === "done") {
-      clearInterval(interval);
-      document.getElementById("status").innerHTML = `
-        ✅ Done! <a href="/download/${jobId}">Download transcript</a>
-      `;
-    } else if (status === "error") {
-      clearInterval(interval);
-      document.getElementById("status").innerText = "❌ An error occurred.";
-    } else {
-      document.getElementById("status").innerText = `⏳ Status: ${status}...`;
-    }
-  }, 2000);
+  pollJobs();
 });
+
+async function pollJobs() {
+  const res = await fetch("/jobs");
+  const jobs = await res.json();
+
+  const jobList = document.getElementById("jobList");
+  jobList.innerHTML = "";
+
+  jobs.forEach(job => {
+    const li = document.createElement("li");
+    let content = `${job.filename} — ${job.status}`;
+    if (job.status === "done") {
+      content += ` — <a href="/download/${job.job_id}">Download</a>`;
+    }
+    li.innerHTML = content;
+    jobList.appendChild(li);
+  });
+}
+
+setInterval(pollJobs, 3000);

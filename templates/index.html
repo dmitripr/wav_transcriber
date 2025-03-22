@@ -2,6 +2,7 @@
 <html>
 <head>
   <title>WAV Transcriber</title>
+  <="utf-8">
   <script src="/static/script.js"></script>
 </head>
 <body>
@@ -9,7 +10,10 @@
   <form id="uploadForm" action="/upload" method="POST" enctype="multipart/form-data">
     <input type="file" id="fileInput" name="file" accept=".wav" required>
     <button type="submit">Upload</button>
-  </form>  
+  </form>
   <div id="status"></div>
+
+  <h2>Transcription Jobs</h2>
+  <ul id="jobList"></ul>
 </body>
 </html>
