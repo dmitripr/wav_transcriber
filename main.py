@@ -45,18 +45,36 @@ async def upload_file(file: UploadFile = File(...), background_tasks: Background
 
 def run_transcription(job_id: str):
     job = job_map[job_id]
-    input_path = job["input_path"]
-    output_path = input_path.with_name(input_path.name + ".txt")  # e.g., Recording.wav.txt
+    original_path = job["input_path"]
+    wav_path = original_path.with_suffix(".wav")
+
 
     job["status"] = "running"
     try:
-        cmd = [
+        # Transcode to 16-bit mono WAV using ffmpeg
+        job["status"] = "converting"
+        cmd_ffmpeg = [
+            "ffmpeg", "-y", "-i", str(original_path),
+            "-acodec", "pcm_s16le", "-ac", "1", "-ar", "16000",
+            str(wav_path)
+        ]
+        subprocess.run(cmd_ffmpeg, check=True)
+        
+        # Delete original file after conversion
+        original_path.unlink()
+        
+        # Prepare final output path (WAV name + .txt)
+        output_path = wav_path.with_name(wav_path.name + ".txt")
+
+        # Run transcription using whisper.cpp
+        job["status"] = "transcribing"
+        cmd_whisper = [
             "/root/code/whisper.cpp/bin/whisper-cli",
-            input_path.name,
+            wav_path.name,
             "--model", "/root/code/whisper.cpp/models/ggml-base.en.bin",
             "-otxt"
         ]
-        subprocess.run(cmd, check=True, cwd=input_path.parent)
+        subprocess.run(cmd_whisper, check=True, cwd=wav_path.parent)
 
         job["output_path"] = output_path
         job["status"] = "done"
