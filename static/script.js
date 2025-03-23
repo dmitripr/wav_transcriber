@@ -53,21 +53,30 @@ window.addEventListener("DOMContentLoaded", () => {
   async function pollAudio() {
     const res = await fetch("/audio_jobs");
     const audioJobs = await res.json();
-
+  
+    const audioList = document.getElementById("audioList");
+  
     for (const job of audioJobs) {
-      const li = document.createElement("li");
+      const itemId = `audio-${job.job_id}`;
+      let li = document.getElementById(itemId);
+  
+      if (!li) {
+        li = document.createElement("li");
+        li.id = itemId;
+        audioList.appendChild(li);
+      }
+  
       const status = job.status || "processing";
-    
+  
       if (status === "done") {
         li.innerHTML = `${job.filename} — <a href="/download_mp3/${job.job_id}">Download MP3</a> 
           <button onclick="deleteAudio('${job.job_id}')">Delete</button>`;
       } else {
         li.innerHTML = `${job.filename} — ${status}`;
       }
-    
-      audioList.appendChild(li);
     }
   }
+  
 
   window.deleteAudio = async function (jobId) {
     await fetch(`/audio_jobs/${jobId}`, { method: "DELETE" });
