@@ -1,18 +1,21 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
   <title>WAV Transcriber</title>
-  <meta charset="utf-8">
+  <link rel="stylesheet" href="/static/style.css">
   <script src="/static/script.js" defer></script>
 </head>
 <body>
-  <h1>Upload a WAV File</h1>
-  <form action="/upload" method="POST" enctype="multipart/form-data">
-    <input type="file" name="file" accept="audio/*,video/*,.m4a,.mp3,.mp4,.mov,.wav" required>
-    <button type="submit">Upload</button>
-  </form>
+  <div class="container">
+    <h1>🎧 Media Transcriber</h1>
+    <form action="/upload" method="POST" enctype="multipart/form-data" class="upload-form">
+      <input type="file" name="file" accept="audio/*,video/*,.mp3,.mp4,.m4a,.wav,.mov" required>
+      <button type="submit">Upload File</button>
+    </form>
 
-  <h2>Transcription Jobs</h2>
-  <ul id="jobList"></ul>
+    <h2>Transcription Jobs</h2>
+    <ul id="jobList" class="job-list"></ul>
+  </div>
 </body>
 </html>
