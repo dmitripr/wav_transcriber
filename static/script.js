@@ -57,8 +57,12 @@ window.addEventListener("DOMContentLoaded", () => {
     audioList.innerHTML = "";
     for (const job of audioJobs) {
       const li = document.createElement("li");
-      li.innerHTML = `${job.filename} — <a href="/download_mp3/${job.job_id}">Download MP3</a> 
-        <button onclick="deleteAudio('${job.job_id}')">Delete</button>`;
+      if (job.status === "done") {
+        li.innerHTML = `${job.filename} — <a href="/download_mp3/${job.job_id}">Download MP3</a> 
+          <button onclick="deleteAudio('${job.job_id}')">Delete</button>`;
+      } else {
+        li.innerHTML = `${job.filename} — ${job.status}`;
+      }
       audioList.appendChild(li);
     }
   }

@@ -13,6 +13,8 @@ app = FastAPI()
 
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
+WHISPER_CLI = "/root/code/whisper.cpp/bin/whisper-cli"
+WHISPER_MODEL = "/root/code/whisper.cpp/models/ggml-base.en.bin"
 YTDLP_PATH = "/usr/local/bin/yt-dlp"  # or wherever it is on your system
 FFMPEG_PATH = "/usr/local/bin/ffmpeg"
 
@@ -62,9 +64,9 @@ def run_transcription(job_id: str):
         job["progress"] = 0
 
         cmd = [
-            "/root/code/whisper.cpp/bin/whisper-cli",
-            wav_path.name,
-            "--model", "/root/code/whisper.cpp/models/ggml-base.en.bin",
+        WHISPER_CLI,
+        wav_path.name,
+        "--model", WHISPER_MODEL,
             "-otxt",
             "-pp"
         ]
@@ -114,8 +116,36 @@ def download(job_id: str):
 @app.post("/yt_transcribe")
 async def yt_transcribe(url: str = Form(...), background_tasks: BackgroundTasks = BackgroundTasks()):
     job_id = str(uuid.uuid4())
-    transcription_jobs[job_id] = {"status": "downloading", "filename": url}
-    background_tasks.add_task(download_and_transcribe_youtube, job_id, url)
+    transcription_jobs[job_id] = {"status": "fetching title", "filename": url}
+
+    def run_transcribe():
+        try:
+            result = subprocess.run([YTDLP_PATH, "--get-title", url], stdout=subprocess.PIPE, text=True)
+            title = result.stdout.strip() or f"yt_{job_id}"
+            safe_title = re.sub(r"[\/:*?\"<>|]", "_", title)
+            filename = f"{safe_title}.m4a"
+            download_path = UPLOAD_DIR / filename
+
+            transcription_jobs[job_id].update({
+                "filename": filename,
+                "input_path": download_path,
+                "status": "downloading"
+            })
+
+            subprocess.run([
+                YTDLP_PATH, "-f", "bestaudio", "--extract-audio",
+                "--audio-format", "m4a",
+                "--ffmpeg-location", FFMPEG_PATH,
+                "-o", str(download_path),
+                url
+            ], check=True)
+
+            run_transcription(job_id)
+        except Exception as e:
+            transcription_jobs[job_id]["status"] = "error"
+            print(f"[ERROR] YouTube transcription {job_id}: {e}")
+
+    background_tasks.add_task(run_transcribe)
     return RedirectResponse(url="/", status_code=303)
 
 def download_and_transcribe_youtube(job_id: str, url: str):
@@ -139,27 +169,39 @@ def download_and_transcribe_youtube(job_id: str, url: str):
         print(f"[ERROR] YouTube transcription {job_id}: {e}")
 
 @app.post("/yt_download")
-async def yt_download(url: str = Form(...)):
+async def yt_download(url: str = Form(...), background_tasks: BackgroundTasks = BackgroundTasks()):
     job_id = str(uuid.uuid4())
-    try:
-        filename = f"yt_{job_id}.mp3"
-        output_path = UPLOAD_DIR / filename
+    audio_jobs[job_id] = {"filename": "Fetching title...", "status": "starting"}
 
-        subprocess.run([
-            YTDLP_PATH, "-x", "--audio-format", "mp3",
-            "--ffmpeg-location", FFMPEG_PATH,
-            "-o", str(output_path),
-            url
-        ], check=True)
+    def run_download():
+        try:
+            result = subprocess.run([YTDLP_PATH, "--get-title", url], stdout=subprocess.PIPE, text=True)
+            title = result.stdout.strip() or f"yt_{job_id}"
+            safe_title = re.sub(r"[\/:*?\"<>|]", "_", title)
+            filename = f"{safe_title}.mp3"
+            output_path = UPLOAD_DIR / filename
 
-        audio_jobs[job_id] = {
-            "filename": filename,
-            "path": output_path
-        }
-        return RedirectResponse(url="/", status_code=303)
-    except Exception as e:
-        print(f"[ERROR] YouTube download {job_id}: {e}")
-        return {"error": "Download failed"}
+            audio_jobs[job_id].update({
+                "filename": filename,
+                "status": "downloading",
+                "path": output_path
+            })
+
+            subprocess.run([
+                YTDLP_PATH, "-x", "--audio-format", "mp3",
+                "--ffmpeg-location", FFMPEG_PATH,
+                "-o", str(output_path),
+                url
+            ], check=True)
+
+            audio_jobs[job_id]["status"] = "done"
+        except Exception as e:
+            audio_jobs[job_id]["status"] = "error"
+            print(f"[ERROR] YouTube download {job_id}: {e}")
+
+    background_tasks.add_task(run_download)
+    return RedirectResponse(url="/", status_code=303)
+
 
 @app.get("/audio_jobs")
 def list_audio_jobs():
