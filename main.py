@@ -90,7 +90,7 @@ def run_transcription(job_id: str):
         ) as proc:
             for line in proc.stdout:
                 print(line.strip())
-                match = re.search(r"progress = (\\d+)%", line)
+                match = re.search(r"progress\s*=\s*(\d+)%", line)
                 if match:
                     job["progress"] = int(match.group(1))
 
