@@ -14,7 +14,7 @@ app = FastAPI()
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
 YTDLP_PATH = "/usr/local/bin/yt-dlp"  # or wherever it is on your system
-
+FFMPEG_PATH = "/usr/local/bin/ffmpeg"
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
@@ -51,7 +51,7 @@ def run_transcription(job_id: str):
 
     try:
         subprocess.run([
-            "/usr/local/bin/ffmpeg", "-y", "-i", str(original_path),
+            FFMPEG_PATH, "-y", "-i", str(original_path),
             "-acodec", "pcm_s16le", "-ac", "1", "-ar", "16000",
             str(wav_path)
         ], check=True)
@@ -126,6 +126,7 @@ def download_and_transcribe_youtube(job_id: str, url: str):
 
         subprocess.run([
             YTDLP_PATH, "-f", "bestaudio", "--extract-audio",
+            "--ffmpeg-location", FFMPEG_PATH,
             "--audio-format", "m4a", "-o", str(download_path),
             url
         ], check=True)
@@ -146,6 +147,7 @@ async def yt_download(url: str = Form(...)):
 
         subprocess.run([
             YTDLP_PATH, "-x", "--audio-format", "mp3",
+            "--ffmpeg-location", FFMPEG_PATH,
             "-o", str(output_path),
             url
         ], check=True)
