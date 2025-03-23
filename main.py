@@ -79,6 +79,20 @@ def run_transcription(job_id: str):
 
         job["output_path"] = output_path
         job["status"] = "done"
+        
+        # Path to the output Whisper generated
+        generated_output = wav_path.with_name(wav_path.name + ".txt")
+
+        # Desired clean name
+        final_output = original_path.with_suffix(".txt")
+
+        # Rename to cleaner final name
+        generated_output.rename(final_output)
+
+        # Save to job map
+        job["output_path"] = final_output
+        wav_path.unlink()  # delete the .transcoded.wav
+
     except subprocess.CalledProcessError:
         job["status"] = "error"
 
