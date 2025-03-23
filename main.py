@@ -6,6 +6,7 @@ from starlette.requests import Request
 import shutil
 import subprocess
 import uuid
+import re
 from pathlib import Path
 
 app = FastAPI()
@@ -69,16 +70,36 @@ def run_transcription(job_id: str):
 
         # Run transcription using whisper.cpp
         job["status"] = "transcribing"
+        
         cmd_whisper = [
             "/root/code/whisper.cpp/bin/whisper-cli",
             wav_path.name,
             "--model", "/root/code/whisper.cpp/models/ggml-base.en.bin",
-            "-otxt"
+            "-otxt",
+            "-pp"
         ]
-        subprocess.run(cmd_whisper, check=True, cwd=wav_path.parent)
+        
+        # subprocess.run(cmd_whisper, check=True, cwd=wav_path.parent)
 
-        job["output_path"] = output_path
+        with subprocess.Popen(
+            cmd_whisper,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            cwd=wav_path.parent,
+            text=True
+        ) as proc:
+            for line in proc.stdout:
+                print(line.strip())
+                match = re.search(r"progress = (\\d+)%", line)
+                if match:
+                    job["progress"] = int(match.group(1))
+
+        proc.wait()
+        job["progress"] = 100
         job["status"] = "done"
+        
+        job["output_path"] = output_path
+
         
         # Path to the output Whisper generated
         generated_output = wav_path.with_name(wav_path.name + ".txt")
@@ -95,6 +116,14 @@ def run_transcription(job_id: str):
 
     except subprocess.CalledProcessError:
         job["status"] = "error"
+
+
+@app.get("/progress/{job_id}")
+def progress(job_id: str):
+    job = job_map.get(job_id)
+    if not job:
+        return {"progress": 0, "status": "not_found"}
+    return {"progress": job.get("progress", 0), "status": job["status"]}
 
 @app.get("/jobs")
 def list_jobs():
