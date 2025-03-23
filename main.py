@@ -54,7 +54,7 @@ def run_transcription(job_id: str):
         # Transcode to 16-bit mono WAV using ffmpeg
         job["status"] = "converting"
         cmd_ffmpeg = [
-            "ffmpeg", "-y", "-i", str(original_path),
+            "/usr/local/bin/ffmpeg", "-y", "-i", str(original_path), # using full path to ffmpeg binary
             "-acodec", "pcm_s16le", "-ac", "1", "-ar", "16000",
             str(wav_path)
         ]
