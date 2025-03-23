@@ -46,7 +46,8 @@ async def upload_file(file: UploadFile = File(...), background_tasks: Background
 def run_transcription(job_id: str):
     job = job_map[job_id]
     original_path = job["input_path"]
-    wav_path = original_path.with_suffix(".wav")
+    # Always write to a new, uniquely named WAV (even if input is .wav)
+    wav_path = original_path.with_name(original_path.stem + ".transcoded.wav")
 
 
     job["status"] = "running"
