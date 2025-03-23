@@ -206,7 +206,11 @@ async def yt_download(url: str = Form(...), background_tasks: BackgroundTasks = 
 @app.get("/audio_jobs")
 def list_audio_jobs():
     return [
-        {"job_id": job_id, "filename": job["filename"]}
+        {
+            "job_id": job_id,
+            "filename": job["filename"],
+            "status": job.get("status", "processing")  # <-- this ensures status is included
+        }
         for job_id, job in audio_jobs.items()
     ]
 

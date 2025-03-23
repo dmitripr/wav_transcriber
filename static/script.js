@@ -54,15 +54,17 @@ window.addEventListener("DOMContentLoaded", () => {
     const res = await fetch("/audio_jobs");
     const audioJobs = await res.json();
 
-    audioList.innerHTML = "";
     for (const job of audioJobs) {
       const li = document.createElement("li");
-      if (job.status === "done") {
+      const status = job.status || "processing";
+    
+      if (status === "done") {
         li.innerHTML = `${job.filename} — <a href="/download_mp3/${job.job_id}">Download MP3</a> 
           <button onclick="deleteAudio('${job.job_id}')">Delete</button>`;
       } else {
-        li.innerHTML = `${job.filename} — ${job.status}`;
+        li.innerHTML = `${job.filename} — ${status}`;
       }
+    
       audioList.appendChild(li);
     }
   }
