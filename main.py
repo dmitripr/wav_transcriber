@@ -13,6 +13,8 @@ app = FastAPI()
 
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
+YTDLP_PATH = "/usr/local/bin/yt-dlp"  # or wherever it is on your system
+
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
@@ -123,7 +125,7 @@ def download_and_transcribe_youtube(job_id: str, url: str):
         download_path = UPLOAD_DIR / f"{filename_base}.m4a"
 
         subprocess.run([
-            "yt-dlp", "-f", "bestaudio", "--extract-audio",
+            YTDLP_PATH, "-f", "bestaudio", "--extract-audio",
             "--audio-format", "m4a", "-o", str(download_path),
             url
         ], check=True)
@@ -143,7 +145,7 @@ async def yt_download(url: str = Form(...)):
         output_path = UPLOAD_DIR / filename
 
         subprocess.run([
-            "yt-dlp", "-x", "--audio-format", "mp3",
+            YTDLP_PATH, "-x", "--audio-format", "mp3",
             "-o", str(output_path),
             url
         ], check=True)
