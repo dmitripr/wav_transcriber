@@ -2,20 +2,33 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>WAV Transcriber</title>
+  <title>Media Transcriber</title>
   <link rel="stylesheet" href="/static/style.css">
   <script src="/static/script.js" defer></script>
 </head>
 <body>
   <div class="container">
-    <h1>🎧 Media Transcriber</h1>
+    <h1>Media Transcriber</h1>
+
     <form action="/upload" method="POST" enctype="multipart/form-data" class="upload-form">
       <input type="file" name="file" accept="audio/*,video/*,.mp3,.mp4,.m4a,.wav,.mov" required>
       <button type="submit">Upload File</button>
     </form>
 
+    <form id="ytForm" class="upload-form">
+      <input type="url" id="ytUrl" name="url" placeholder="Paste YouTube URL" required>
+      <select id="ytAction">
+        <option value="transcribe">Transcribe</option>
+        <option value="download">Download MP3</option>
+      </select>
+      <button type="submit">Submit YouTube Link</button>
+    </form>
+
     <h2>Transcription Jobs</h2>
-    <ul id="jobList" class="job-list"></ul>
+    <ul id="jobList"></ul>
+
+    <h2>Audio Downloads</h2>
+    <ul id="audioList"></ul>
   </div>
 </body>
 </html>

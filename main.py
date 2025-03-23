@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, BackgroundTasks
+from fastapi import FastAPI, UploadFile, File, BackgroundTasks, Form
 from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -17,7 +17,8 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-job_map = {}
+transcription_jobs = {}
+audio_jobs = {}
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
@@ -27,123 +28,158 @@ async def index(request: Request):
 async def upload_file(file: UploadFile = File(...), background_tasks: BackgroundTasks = BackgroundTasks()):
     job_id = str(uuid.uuid4())
     original_filename = Path(file.filename).name
-    upload_path = UPLOAD_DIR / original_filename
-    output_path = upload_path.with_suffix(".txt")
+    input_path = UPLOAD_DIR / original_filename
 
-    with open(upload_path, "wb") as buffer:
+    with open(input_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    job_map[job_id] = {
+    transcription_jobs[job_id] = {
         "status": "starting",
-        "input_path": upload_path,
-        "output_path": output_path,
+        "input_path": input_path,
         "filename": original_filename
     }
 
     background_tasks.add_task(run_transcription, job_id)
-
     return RedirectResponse(url="/", status_code=303)
 
 def run_transcription(job_id: str):
-    job = job_map[job_id]
+    job = transcription_jobs[job_id]
     original_path = job["input_path"]
-    # Always write to a new, uniquely named WAV (even if input is .wav)
     wav_path = original_path.with_name(original_path.stem + ".transcoded.wav")
 
-
-    job["status"] = "running"
     try:
-        # Transcode to 16-bit mono WAV using ffmpeg
-        job["status"] = "converting"
-        cmd_ffmpeg = [
-            "/usr/local/bin/ffmpeg", "-y", "-i", str(original_path), # using full path to ffmpeg binary
+        subprocess.run([
+            "/usr/local/bin/ffmpeg", "-y", "-i", str(original_path),
             "-acodec", "pcm_s16le", "-ac", "1", "-ar", "16000",
             str(wav_path)
-        ]
-        subprocess.run(cmd_ffmpeg, check=True)
-        
-        # Delete original file after conversion
+        ], check=True)
         original_path.unlink()
-        
-        # Prepare final output path (WAV name + .txt)
-        output_path = wav_path.with_name(wav_path.name + ".txt")
 
-        # Run transcription using whisper.cpp
-        job["status"] = "transcribing"
-        
-        cmd_whisper = [
+        output_path = wav_path.with_name(wav_path.name + ".txt")
+        job["status"] = "running"
+        job["progress"] = 0
+
+        cmd = [
             "/root/code/whisper.cpp/bin/whisper-cli",
             wav_path.name,
             "--model", "/root/code/whisper.cpp/models/ggml-base.en.bin",
             "-otxt",
             "-pp"
         ]
-        
-        # subprocess.run(cmd_whisper, check=True, cwd=wav_path.parent)
 
-        with subprocess.Popen(
-            cmd_whisper,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            cwd=wav_path.parent,
-            text=True
-        ) as proc:
+        with subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=wav_path.parent, text=True) as proc:
             for line in proc.stdout:
-                print(line.strip())
                 match = re.search(r"progress\s*=\s*(\d+)%", line)
                 if match:
                     job["progress"] = int(match.group(1))
 
         proc.wait()
-        job["progress"] = 100
-        job["status"] = "done"
-        
-        job["output_path"] = output_path
-
-        
-        # Path to the output Whisper generated
-        generated_output = wav_path.with_name(wav_path.name + ".txt")
-
-        # Desired clean name
         final_output = original_path.with_suffix(".txt")
+        Path(output_path).rename(final_output)
+        wav_path.unlink()
 
-        # Rename to cleaner final name
-        generated_output.rename(final_output)
-
-        # Save to job map
         job["output_path"] = final_output
-        wav_path.unlink()  # delete the .transcoded.wav
-
-    except subprocess.CalledProcessError:
+        job["status"] = "done"
+        job["progress"] = 100
+    except Exception as e:
         job["status"] = "error"
-
-
-@app.get("/progress/{job_id}")
-def progress(job_id: str):
-    job = job_map.get(job_id)
-    if not job:
-        return {"progress": 0, "status": "not_found"}
-    return {"progress": job.get("progress", 0), "status": job["status"]}
+        print(f"[ERROR] Transcription job {job_id}: {e}")
 
 @app.get("/jobs")
 def list_jobs():
     return [
-        {
-            "job_id": job_id,
-            "filename": job["filename"],
-            "status": job["status"]
-        }
-        for job_id, job in job_map.items()
+        {"job_id": job_id, "filename": job["filename"], "status": job["status"]}
+        for job_id, job in transcription_jobs.items()
     ]
+
+@app.get("/progress/{job_id}")
+def progress(job_id: str):
+    job = transcription_jobs.get(job_id)
+    if not job:
+        return {"progress": 0, "status": "not_found"}
+    return {"progress": job.get("progress", 0), "status": job["status"]}
 
 @app.get("/download/{job_id}")
 def download(job_id: str):
-    job = job_map.get(job_id)
+    job = transcription_jobs.get(job_id)
     if not job:
-        return {"error": "Job ID not found"}
-
-    output_path = job["output_path"]
-    if not output_path.exists():
+        return {"error": "Job not found"}
+    output_path = job.get("output_path")
+    if not output_path or not output_path.exists():
         return {"error": "Transcript not found"}
-
     return FileResponse(output_path, filename=output_path.name)
+
+@app.post("/yt_transcribe")
+async def yt_transcribe(url: str = Form(...), background_tasks: BackgroundTasks = BackgroundTasks()):
+    job_id = str(uuid.uuid4())
+    transcription_jobs[job_id] = {"status": "downloading", "filename": url}
+    background_tasks.add_task(download_and_transcribe_youtube, job_id, url)
+    return RedirectResponse(url="/", status_code=303)
+
+def download_and_transcribe_youtube(job_id: str, url: str):
+    try:
+        job = transcription_jobs[job_id]
+        filename_base = f"yt_{job_id}"
+        download_path = UPLOAD_DIR / f"{filename_base}.m4a"
+
+        subprocess.run([
+            "yt-dlp", "-f", "bestaudio", "--extract-audio",
+            "--audio-format", "m4a", "-o", str(download_path),
+            url
+        ], check=True)
+
+        job["input_path"] = download_path
+        job["filename"] = f"YouTube: {url}"
+        run_transcription(job_id)
+    except Exception as e:
+        job["status"] = "error"
+        print(f"[ERROR] YouTube transcription {job_id}: {e}")
+
+@app.post("/yt_download")
+async def yt_download(url: str = Form(...)):
+    job_id = str(uuid.uuid4())
+    try:
+        filename = f"yt_{job_id}.mp3"
+        output_path = UPLOAD_DIR / filename
+
+        subprocess.run([
+            "yt-dlp", "-x", "--audio-format", "mp3",
+            "-o", str(output_path),
+            url
+        ], check=True)
+
+        audio_jobs[job_id] = {
+            "filename": filename,
+            "path": output_path
+        }
+        return RedirectResponse(url="/", status_code=303)
+    except Exception as e:
+        print(f"[ERROR] YouTube download {job_id}: {e}")
+        return {"error": "Download failed"}
+
+@app.get("/audio_jobs")
+def list_audio_jobs():
+    return [
+        {"job_id": job_id, "filename": job["filename"]}
+        for job_id, job in audio_jobs.items()
+    ]
+
+@app.get("/download_mp3/{job_id}")
+def download_mp3(job_id: str):
+    job = audio_jobs.get(job_id)
+    if not job:
+        return {"error": "Job not found"}
+    path = job["path"]
+    if not path.exists():
+        return {"error": "MP3 not found"}
+    return FileResponse(path, filename=path.name)
+
+@app.delete("/audio_jobs/{job_id}")
+def delete_audio_job(job_id: str):
+    job = audio_jobs.pop(job_id, None)
+    if job:
+        try:
+            job["path"].unlink()
+        except Exception as e:
+            print(f"[WARN] Could not delete file: {e}")
+    return {"status": "deleted"}
