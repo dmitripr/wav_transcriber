@@ -80,8 +80,10 @@ window.addEventListener("DOMContentLoaded", () => {
 
   window.deleteAudio = async function (jobId) {
     await fetch(`/audio_jobs/${jobId}`, { method: "DELETE" });
-    pollAudio(); // 👈 Force refresh immediately
+    const li = document.getElementById(`audio-${jobId}`);
+    if (li) li.remove();
   };
+  
 
   pollJobs();
   pollAudio();
