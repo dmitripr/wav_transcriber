@@ -92,3 +92,35 @@ li button {
 li button:hover {
   background: #c82333;
 }
+
+@media (max-width: 600px) {
+  .upload-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .upload-form input[type="file"],
+  .upload-form input[type="url"],
+  .upload-form select,
+  .upload-form button {
+    width: 100%;
+    font-size: 1.1rem;
+    padding: 0.9rem;
+  }
+
+  h1 {
+    font-size: 1.6rem;
+    text-align: center;
+  }
+
+  h2 {
+    font-size: 1.3rem;
+    margin-top: 2rem;
+  }
+
+  li {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}
