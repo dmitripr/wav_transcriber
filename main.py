@@ -14,7 +14,8 @@ app = FastAPI()
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
 WHISPER_CLI = "/root/code/whisper.cpp/bin/whisper-cli"
-WHISPER_MODEL = "/root/code/whisper.cpp/models/ggml-base.en.bin"
+# WHISPER_MODEL = "/root/code/whisper.cpp/models/ggml-base.en.bin"
+WHISPER_MODEL = "/root/code/whisper.cpp/models/ggml-small.en.bin"
 YTDLP_PATH = "/usr/local/bin/yt-dlp"  # or wherever it is on your system
 FFMPEG_PATH = "/usr/local/bin/ffmpeg"
 
