@@ -2,6 +2,7 @@ from fastapi import FastAPI, UploadFile, File, BackgroundTasks, Form
 from fastapi.responses import FileResponse, RedirectResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.requests import Request
 import shutil
 import subprocess
 import uuid
@@ -13,9 +14,11 @@ from datetime import datetime
 
 app = FastAPI()
 
+templates = Jinja2Templates(directory="templates")
+
 @app.get("/", response_class=HTMLResponse)
-async def root():
-    return RedirectResponse(url="/static/index.html")
+async def root(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
 
 
@@ -32,7 +35,7 @@ FFMPEG_PATH = "/usr/local/bin/ffmpeg"
 YTDLP_PATH = "/usr/local/bin/yt-dlp"
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+
 
 transcription_jobs = {}
 audio_jobs = {}
