@@ -1,5 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, BackgroundTasks, Form
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import shutil
@@ -12,6 +12,12 @@ from pathlib import Path
 from datetime import datetime
 
 app = FastAPI()
+
+@app.get("/", response_class=HTMLResponse)
+async def root():
+    return RedirectResponse(url="/static/index.html")
+
+
 
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
