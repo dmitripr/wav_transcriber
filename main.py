@@ -72,7 +72,7 @@ async def upload_file(file: UploadFile = File(...), background_tasks: Background
         "filename": file.filename,
         "input_path": input_path,
         "status": "queued",
-        "start": datetime.now().isoformat(),
+        "start": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "end": None
     }
     background_tasks.add_task(run_transcription, job_id)
@@ -95,7 +95,7 @@ def run_transcription(job_id):
     if Path(output_path).exists():
         job["output_path"] = output_path
         job["status"] = "done"
-        job["end"] = datetime.now().isoformat()
+        job["end"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     wav_path.unlink(missing_ok=True)
     save_jobs()
 
@@ -117,7 +117,7 @@ def download(job_id: str):
 @app.post("/yt_download")
 async def yt_download(url: str = Form(...), background_tasks: BackgroundTasks = BackgroundTasks()):
     job_id = str(uuid.uuid4())
-    audio_jobs[job_id] = {"filename": "Fetching title...", "status": "starting", "start": datetime.now().isoformat()}
+    audio_jobs[job_id] = {"filename": "Fetching title...", "status": "starting", "start": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
     def run_download():
         try:
             title = subprocess.run([YTDLP_PATH, "--get-title", url], capture_output=True, text=True).stdout.strip()
@@ -127,7 +127,7 @@ async def yt_download(url: str = Form(...), background_tasks: BackgroundTasks = 
             audio_jobs[job_id].update({"filename": filename, "status": "downloading", "path": output_path})
             subprocess.run([YTDLP_PATH, "-x", "--audio-format", "mp3", "--ffmpeg-location", FFMPEG_PATH, "-o", str(output_path), url], check=True)
             audio_jobs[job_id]["status"] = "done"
-            audio_jobs[job_id]["end"] = datetime.now().isoformat()
+            audio_jobs[job_id]["end"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         except Exception as e:
             audio_jobs[job_id]["status"] = "error"
         save_jobs()
@@ -137,7 +137,7 @@ async def yt_download(url: str = Form(...), background_tasks: BackgroundTasks = 
 @app.post("/yt_transcribe")
 async def yt_transcribe(url: str = Form(...), background_tasks: BackgroundTasks = BackgroundTasks()):
     job_id = str(uuid.uuid4())
-    transcription_jobs[job_id] = {"status": "fetching title", "filename": url, "start": datetime.now().isoformat()}
+    transcription_jobs[job_id] = {"status": "fetching title", "filename": url, "start": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
     def run_transcribe():
         try:
             title = subprocess.run([YTDLP_PATH, "--get-title", url], capture_output=True, text=True).stdout.strip()

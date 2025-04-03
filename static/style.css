@@ -40,6 +40,20 @@ h1, h2 {
   min-width: 250px;
 }
 
+button {
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
 .upload-form button {
   padding: 0.6rem 1.2rem;
   font-size: 1rem;
@@ -92,6 +106,25 @@ li button {
 li button:hover {
   background: #c82333;
 }
+
+table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 0.5rem;
+  text-align: left;
+  word-wrap: break-word;
+}
+
+th:nth-child(1) { width: 30%; } /* Filename */
+th:nth-child(2) { width: 20%; } /* Start */
+th:nth-child(3) { width: 15%; } /* Status */
+th:nth-child(4) { width: 20%; } /* End */
+th:nth-child(5) { width: 15%; } /* Download/Delete */
+
 
 @media (max-width: 1000px) {
   .upload-form {
