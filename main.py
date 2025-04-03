@@ -84,7 +84,7 @@ def run_transcription(job_id):
     wav_path = original_path.with_name(original_path.stem + ".transcoded.wav")
     subprocess.run([FFMPEG_PATH, "-y", "-i", str(original_path), "-acodec", "pcm_s16le", "-ac", "1", "-ar", "16000", str(wav_path)], check=True)
     original_path.unlink(missing_ok=True)
-    output_path = wav_path.with_suffix(".txt")
+    output_path = wav_path.with_name(wav_path.name + ".txt")
     job["status"] = "running"
     cmd = [WHISPER_CLI, wav_path.name, "--model", WHISPER_MODEL, "-otxt", "-pp","-tdrz"]
     with subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=UPLOAD_DIR, text=True) as proc:
