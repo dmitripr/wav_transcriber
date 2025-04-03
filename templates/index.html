@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8">
   <title>Media Transcriber</title>
@@ -12,7 +12,7 @@
 
     <form action="/upload" method="POST" enctype="multipart/form-data" class="upload-form">
       <input type="file" name="file" accept="audio/*,video/*,.mp3,.mp4,.m4a,.wav,.mov" required>
-      <button type="submit">Transcribe</button>
+      <button type="submit">Upload File</button>
     </form>
 
     <form id="ytForm" class="upload-form">
@@ -21,14 +21,26 @@
         <option value="transcribe">Transcribe</option>
         <option value="download">Download MP3</option>
       </select>
-      <button type="submit">Submit Link</button>
+      <button type="submit">Submit YouTube Link</button>
     </form>
 
     <h2>Transcription Jobs</h2>
-    <ul id="jobList"></ul>
+    <button onclick="clearTranscriptions()">Clear All</button>
+    <table id="jobTable">
+      <thead>
+        <tr><th>Filename</th><th>Start</th><th>Status</th><th>End</th><th>Download</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
 
     <h2>Audio Downloads</h2>
-    <ul id="audioList"></ul>
+    <button onclick="clearAudio()">Clear All</button>
+    <table id="audioTable">
+      <thead>
+        <tr><th>Filename</th><th>Start</th><th>Status</th><th>End</th><th>Action</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
   </div>
 </body>
 </html>
