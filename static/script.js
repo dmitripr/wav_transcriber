@@ -13,7 +13,8 @@ window.addEventListener("DOMContentLoaded", () => {
 
   window.clearTranscriptions = async () => {
     await fetch("/clear_transcriptions", { method: "DELETE" });
-    pollJobs();
+    const tbody = document.querySelector("#jobTable tbody");
+    tbody.innerHTML = "";
   };
 
   window.clearAudio = async () => {
