@@ -30,7 +30,7 @@ TRANSCRIPTION_FILE = JOB_STORAGE / "transcriptions.json"
 AUDIO_FILE = JOB_STORAGE / "audio_jobs.json"
 
 WHISPER_CLI = "/root/code/whisper.cpp/build/bin/whisper-cli"
-WHISPER_MODEL = "/root/code/whisper.cpp/models/ggml-large-v3-turbo.bin"
+WHISPER_MODEL = "/root/code/whisper.cpp/models/ggml-small.en.bin"
 FFMPEG_PATH = "/usr/local/bin/ffmpeg"
 YTDLP_PATH = "/usr/local/bin/yt-dlp"
 
@@ -112,7 +112,10 @@ def progress(job_id: str):
 def download(job_id: str):
     job = transcription_jobs.get(job_id)
     path = job.get("output_path")
-    return FileResponse(path, filename=path.name)
+    original_name = transcription_jobs[job_id]["filename"]
+    download_name = Path(original_name).with_suffix(".txt").name
+    return FileResponse(path, filename=download_name)
+
 
 @app.post("/yt_download")
 async def yt_download(url: str = Form(...), background_tasks: BackgroundTasks = BackgroundTasks()):

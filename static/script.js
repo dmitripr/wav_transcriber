@@ -31,13 +31,20 @@ window.addEventListener("DOMContentLoaded", () => {
     const res = await fetch("/jobs");
     const jobs = await res.json();
     const tbody = document.querySelector("#jobTable tbody");
-    tbody.innerHTML = "";
-
+  
     for (const job of jobs) {
-      const row = document.createElement("tr");
-      row.id = `job-${job.job_id}`;
+      const rowId = `job-${job.job_id}`;
+      let row = document.getElementById(rowId);
+  
+      if (!row) {
+        row = document.createElement("tr");
+        row.id = rowId;
+        tbody.appendChild(row);
+      }
+  
       const progressRes = await fetch(`/progress/${job.job_id}`);
       const progressData = await progressRes.json();
+  
       row.innerHTML = `
         <td>${job.filename}</td>
         <td>${job.start || "—"}</td>
@@ -45,9 +52,9 @@ window.addEventListener("DOMContentLoaded", () => {
         <td>${job.end || "—"}</td>
         <td>${progressData.status === "done" ? `<a href="/download/${job.job_id}">Download</a>` : ""}</td>
       `;
-      tbody.appendChild(row);
     }
   }
+  
 
   async function pollAudio() {
     const res = await fetch("/audio_jobs");
