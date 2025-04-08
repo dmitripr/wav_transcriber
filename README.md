@@ -1,117 +1,127 @@
-# 🎧 WAV Transcriber Web Server (FastAPI + Whisper.cpp + FFmpeg)
+# WAV Transcriber Web Server (FastAPI + Whisper.cpp + FFmpeg)
 
-This project provides a simple and clean web-based transcription tool that allows users to upload audio or video files (e.g. `.mp3`, `.mp4`, `.wav`, `.m4a`, `.mov`, etc.), automatically transcodes them to 16-bit mono WAV using `ffmpeg`, and transcribes them using [whisper.cpp](https://github.com/ggerganov/whisper.cpp)'s `whisper-cli`.
+This project provides a flexible web-based transcription tool that allows users to upload media files (e.g., `.mp3`, `.mp4`, `.wav`, `.m4a`, `.mov`, etc.), or paste a YouTube link to download and transcribe or extract audio. It uses `ffmpeg` to convert input to 16-bit mono WAV files, then transcribes them using [whisper.cpp](https://github.com/ggerganov/whisper.cpp)'s `whisper-cli`.
 
-Built to run inside a **FreeBSD jail** (e.g., on TrueNAS CORE), but portable to any environment with Python, `ffmpeg`, and `whisper-cli`.
+Built for deployment inside a FreeBSD jail (e.g., on TrueNAS CORE), but portable to any environment with Python, `ffmpeg`, and `whisper-cli`.
 
----
+## Features
 
-## 🚀 Features
-
-- Upload audio or video files via browser
-- Converts uploaded files to 16-bit mono WAV with `ffmpeg`
-- Transcribes them using `whisper-cli`
-- Automatically deletes original upload after conversion
+- Upload audio/video files directly from browser
+- Paste a YouTube URL to:
+  - Transcribe the video
+  - Or just download the MP3 audio
+- Automatic conversion to 16-bit mono WAV using `ffmpeg`
+- Transcription via `whisper-cli`
 - Downloadable `.txt` transcription output
-- Lightweight UI (HTML + CSS, no frontend framework)
+- Supports multiple simultaneous jobs
+- Job metadata persisted across restarts
 
----
-
-## 📦 Requirements
+## Requirements
 
 - Python 3.9+
-- `fastapi`, `uvicorn`, `jinja2` (see `requirements.txt`)
-- `ffmpeg` installed (e.g., `pkg install ffmpeg` on FreeBSD)
-- [`whisper.cpp`](https://github.com/ggerganov/whisper.cpp) compiled and accessible
+- Python packages:
+  - fastapi, uvicorn, jinja2
+- System tools:
+  - ffmpeg
+  - yt-dlp
+- Compiled version of [whisper.cpp](https://github.com/ggerganov/whisper.cpp)
 
----
-
-## 🛠 Setup
+## Setup
 
 ### 1. Clone the repo
 
-```sh
+```bash
 git clone https://github.com/yourname/wav_transcriber.git
 cd wav_transcriber
 ```
 
 ### 2. Install Python dependencies
 
-```sh
+```bash
 pip install fastapi uvicorn jinja2
 ```
 
-### 3. Install FFmpeg (if not already)
+### 3. Install FFmpeg and yt-dlp
 
-```sh
-pkg install ffmpeg
+```bash
+pkg install ffmpeg yt-dlp
 ```
 
-### 4. Build or download `whisper.cpp`
+Or if unavailable via pkg:
 
-Clone [whisper.cpp](https://github.com/ggerganov/whisper.cpp) and follow its build instructions:
+```bash
+pip install yt-dlp
+```
 
-```sh
+### 4. Build whisper.cpp
+
+```bash
 git clone https://github.com/ggerganov/whisper.cpp
 cd whisper.cpp
 make
 ```
 
-Download a model (e.g., `ggml-base.en.bin`) and place it in a folder like:
+Download a model file:
+
+```bash
+./models/download-ggml-model.sh base.en
+```
+
+Place model in a known directory, e.g.:
 
 ```
 ~/code/whisper.cpp/models/
 ```
 
----
+## Configuration
 
-## ⚙ Configuration Notes
-
-### Default paths used in `main.py` (edit if needed):
+Edit paths in main.py to reflect your environment:
 
 ```python
 WHISPER_CLI = "/root/code/whisper.cpp/bin/whisper-cli"
-MODEL_PATH = "/root/code/whisper.cpp/models/ggml-base.en.bin"
-UPLOAD_DIR = "/root/wav_transcriber/uploads"
+WHISPER_MODEL = "/root/code/whisper.cpp/models/ggml-base.en.bin"
+FFMPEG_PATH = "/usr/local/bin/ffmpeg"
+YTDLP_PATH = "/usr/local/bin/yt-dlp"
+UPLOAD_DIR = "uploads"
 ```
 
-> 🔧 Update these paths if your jail or system uses different directories.
+## Running the App
 
----
-
-## ▶ Run the App
-
-```sh
+```bash
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-Visit your browser at: [http://localhost:8000](http://localhost:8000)
+Then open:
 
----
+```
+http://localhost:8000
+```
 
-## 🧼 Autostart in FreeBSD Jail (optional)
+## Optional: Autostart in FreeBSD Jail
 
 1. Create an RC script in `/usr/local/etc/rc.d/wavtranscriber`
-2. Enable with: `sysrc wavtranscriber_enable=YES`
-3. Add service logic to auto-start `uvicorn` in the app directory
+2. Enable the service:
 
----
+```bash
+sysrc wavtranscriber_enable=YES
+```
 
-## 📁 Output Files
+3. Configure it to start `uvicorn` at boot
 
-- Transcripts are saved as `.txt` in the `uploads/` directory
-- Filenames are cleaned to match the original media name (e.g., `interview.mp4 → interview.txt`)
+## Output
 
----
+- Transcriptions are saved as `.txt` in the `uploads/` folder
+- Filenames are based on the original upload or YouTube title
+- Audio download jobs output `.mp3` files with clean names
+- Deleted jobs also remove associated files
 
-## 🙌 Credits
+## Credits
 
 - [Whisper.cpp](https://github.com/ggerganov/whisper.cpp) by Georgi Gerganov
 - [FFmpeg](https://ffmpeg.org/)
 - [FastAPI](https://fastapi.tiangolo.com/)
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp)
 
----
+## License
 
-## 🛡 License
-
-MIT — use freely, modify boldly!
+MIT — use freely, modify boldly.
