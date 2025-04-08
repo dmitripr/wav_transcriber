@@ -29,8 +29,8 @@ JOB_STORAGE.mkdir(exist_ok=True)
 TRANSCRIPTION_FILE = JOB_STORAGE / "transcriptions.json"
 AUDIO_FILE = JOB_STORAGE / "audio_jobs.json"
 
-WHISPER_CLI = "/root/code/whisper.cpp/bin/whisper-cli"
-WHISPER_MODEL = "/root/code/whisper.cpp/models/ggml-small.en-tdrz.bin"
+WHISPER_CLI = "/root/code/whisper.cpp/build/bin/whisper-cli"
+WHISPER_MODEL = "/root/code/whisper.cpp/models/ggml-large-v3-turbo.bin"
 FFMPEG_PATH = "/usr/local/bin/ffmpeg"
 YTDLP_PATH = "/usr/local/bin/yt-dlp"
 
@@ -86,7 +86,7 @@ def run_transcription(job_id):
     original_path.unlink(missing_ok=True)
     output_path = wav_path.with_name(wav_path.name + ".txt")
     job["status"] = "running"
-    cmd = [WHISPER_CLI, wav_path.name, "--model", WHISPER_MODEL, "-otxt", "-pp","-tdrz"]
+    cmd = [WHISPER_CLI, wav_path.name, "--model", WHISPER_MODEL, "-otxt", "-pp"]
     with subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=UPLOAD_DIR, text=True) as proc:
         for line in proc.stdout:
             match = re.search(r"progress\s*=\s*(\d+)%", line)
