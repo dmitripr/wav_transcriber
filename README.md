@@ -55,10 +55,13 @@ pip install yt-dlp
 
 ### 4. Build whisper.cpp
 
+Note: depending on your OS, you may need to install 'cmake' package. 
+
 ```bash
 git clone https://github.com/ggerganov/whisper.cpp
 cd whisper.cpp
-make
+cmake -B build
+cmake --build build --config Release
 ```
 
 Download a model file:
