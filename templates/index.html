@@ -1,46 +1,127 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f172a">
   <title>Media Transcriber</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎙️</text></svg>">
   <link rel="stylesheet" href="/static/style.css">
   <script src="/static/script.js" defer></script>
 </head>
 <body>
-  <div class="container">
-    <h1>Media Transcriber</h1>
+  <main class="container">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">whisper.cpp · FastAPI</p>
+        <h1>Media Transcriber</h1>
+        <p class="subtitle">Turn audio and video into text. Upload a file or pull the audio track from YouTube.</p>
+      </div>
+      <span class="pill">Local processing</span>
+    </header>
 
-    <form action="/upload" method="POST" enctype="multipart/form-data" class="upload-form">
-      <input type="file" name="file" accept="audio/*,video/*,.mp3,.mp4,.m4a,.wav,.mov" required>
-      <button type="submit">Upload File</button>
-    </form>
+    <section class="card" aria-labelledby="upload-title">
+      <div class="section-header">
+        <div>
+          <h2 id="upload-title">Upload media</h2>
+          <p class="muted">MP3, MP4, M4A, WAV, MOV and most formats ffmpeg can read.</p>
+        </div>
+      </div>
+      <form action="/upload" method="POST" enctype="multipart/form-data" class="form-row">
+        <div class="field grow">
+          <label for="fileInput">Audio or video file</label>
+          <input id="fileInput" type="file" name="file"
+                 accept="audio/*,video/*,.mp3,.mp4,.m4a,.wav,.mov" required>
+        </div>
+        <button class="button primary" type="submit">Upload &amp; transcribe</button>
+      </form>
+    </section>
 
-    <form id="ytForm" class="upload-form">
-      <input type="url" id="ytUrl" name="url" placeholder="Paste YouTube URL" required>
-      <select id="ytAction">
-        <option value="download">Download MP3</option>
-        <option value="transcribe">Transcribe</option>
-      </select>
-      <button type="submit">Submit YouTube Link</button>
-    </form>
+    <section class="card" aria-labelledby="youtube-title">
+      <div class="section-header">
+        <div>
+          <h2 id="youtube-title">YouTube</h2>
+          <p class="muted">Download the audio as MP3 or transcribe the video directly.</p>
+        </div>
+      </div>
+      <form id="ytForm" class="form-row">
+        <div class="field grow">
+          <label for="ytUrl">Video URL</label>
+          <input type="url" id="ytUrl" name="url" placeholder="https://www.youtube.com/watch?v=…" required>
+        </div>
+        <div class="field">
+          <label for="ytAction">Action</label>
+          <select id="ytAction">
+            <option value="download">Download MP3</option>
+            <option value="transcribe">Transcribe</option>
+          </select>
+        </div>
+        <button class="button primary" type="submit">Submit link</button>
+      </form>
+    </section>
 
-    <h2>Transcription Jobs</h2>
-    <button onclick="clearTranscriptions()">Clear All</button>
-    <table id="jobTable">
-      <thead>
-        <tr><th>Filename</th><th>Start</th><th>Status</th><th>End</th><th>Download</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <section class="card" aria-labelledby="transcriptions-title">
+      <div class="section-header">
+        <div>
+          <h2 id="transcriptions-title">Transcription jobs</h2>
+          <p class="muted">Status refreshes automatically every few seconds.</p>
+        </div>
+        <button id="clearTranscriptions" class="button ghost small" type="button">Clear all</button>
+      </div>
+      <div class="table-wrap">
+        <table id="jobTable">
+          <thead>
+            <tr>
+              <th>Filename</th>
+              <th>Start</th>
+              <th>Status</th>
+              <th>End</th>
+              <th class="actions-col">Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
 
-    <h2>Audio Downloads</h2>
-    <button onclick="clearAudio()">Clear All</button>
-    <table id="audioTable">
-      <thead>
-        <tr><th>Filename</th><th>Start</th><th>Status</th><th>End</th><th>Action</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
+    <section class="card" aria-labelledby="audio-title">
+      <div class="section-header">
+        <div>
+          <h2 id="audio-title">Audio downloads</h2>
+          <p class="muted">MP3 files extracted from YouTube links.</p>
+        </div>
+        <button id="clearAudio" class="button ghost small" type="button">Clear all</button>
+      </div>
+      <div class="table-wrap">
+        <table id="audioTable">
+          <thead>
+            <tr>
+              <th>Filename</th>
+              <th>Start</th>
+              <th>Status</th>
+              <th>End</th>
+              <th class="actions-col">Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="logDialog" class="log-dialog" aria-labelledby="logTitle">
+    <div class="dialog-header">
+      <div>
+        <h2 id="logTitle">Process log</h2>
+        <p id="logSubtitle" class="muted"></p>
+      </div>
+      <button id="closeLog" class="icon-button" type="button" aria-label="Close log">×</button>
+    </div>
+    <pre id="logContent" class="log-output" tabindex="0">Loading…</pre>
+    <div class="dialog-actions">
+      <button id="downloadLog" class="button secondary small" type="button">Download log</button>
+      <button id="closeLogFooter" class="button primary small" type="button">Close</button>
+    </div>
+  </dialog>
 </body>
 </html>
