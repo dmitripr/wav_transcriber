@@ -77,10 +77,7 @@ YTDLP_PATH = _env_path("WAV_YTDLP", "/usr/local/bin/yt-dlp")  # WAV_YTDLP
 # --- Media processing -----------------------------------------------------
 TRANSCODED_SUFFIX = ".transcoded.wav"
 TRANSCRIPT_SUFFIX = ".txt"
-FFMPEG_ARGS = (
-    "-y",
-    "-loglevel",
-    "error",
+FFMPEG_OUTPUT_ARGS = (
     "-vn",
     "-acodec",
     "pcm_s16le",

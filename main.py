@@ -205,9 +205,12 @@ def run_transcription(job_id: str) -> None:
         job_logs.write(job_id, "Converting input to 16 kHz mono WAV")
         convert_command = [
             str(config.FFMPEG_PATH),
-            *config.FFMPEG_ARGS,
+            "-y",
+            "-loglevel",
+            "error",
             "-i",
             str(original_path),
+            *config.FFMPEG_OUTPUT_ARGS,
             str(wav_path),
         ]
         job_logs.command(job_id, convert_command)
